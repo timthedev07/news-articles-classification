@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>News Articles Categorization</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx"
+      crossorigin="anonymous"
+    />
+    <style>
+      #container {
+        flex-direction: row;
+        gap: 10px;
+      }
+      #chart-container {
+        width: 50%;
+      }
+      @media screen and (max-width: 550px) {
+        #container {
+          flex-direction: column;
+          gap: 35px;
+        }
+        #chart-container {
+          width: 90%;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-dark text-white">
+    <div
+      id="loading"
+      style="
+        width: 100vw;
+        height: 100vh;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        background: rgb(92, 92, 92, 0.5);
+        z-index: 1000;
+        background: linear-gradient(
+          216deg,
+          rgba(92, 92, 92, 0.5) 0%,
+          rgba(136, 137, 138, 0.5) 100%
+        );
+        position: absolute;
+      "
+    >
+      <div class="spinner-border text-light" role="status"></div>
+    </div>
+    <div
+      style="
+        background-color: #0057a3;
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50px;
+        border-bottom-left-radius: 13px;
+        z-index: 1000;
+      "
+    >
+      <a
+        href="https://github.com/timthedev07/news-articles-classification"
+        style="
+          cursor: pointer;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        "
+      >
+        <?xml version="1.0" ?><svg
+          viewBox="0 0 640 512"
+          style="width: 25px; height: auto"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M416 31.94C416 21.75 408.1 0 384.1 0c-13.98 0-26.87 9.072-30.89 23.18l-128 448c-.8404 2.935-1.241 5.892-1.241 8.801C223.1 490.3 232 512 256 512c13.92 0 26.73-9.157 30.75-23.22l128-448C415.6 37.81 416 34.85 416 31.94zM176 143.1c0-18.28-14.95-32-32-32c-8.188 0-16.38 3.125-22.62 9.376l-112 112C3.125 239.6 0 247.8 0 255.1S3.125 272.4 9.375 278.6l112 112C127.6 396.9 135.8 399.1 144 399.1c17.05 0 32-13.73 32-32c0-8.188-3.125-16.38-9.375-22.63L77.25 255.1l89.38-89.38C172.9 160.3 176 152.2 176 143.1zM640 255.1c0-8.188-3.125-16.38-9.375-22.63l-112-112C512.4 115.1 504.2 111.1 496 111.1c-17.05 0-32 13.73-32 32c0 8.188 3.125 16.38 9.375 22.63l89.38 89.38l-89.38 89.38C467.1 351.6 464 359.8 464 367.1c0 18.28 14.95 32 32 32c8.188 0 16.38-3.125 22.62-9.376l112-112C636.9 272.4 640 264.2 640 255.1z"
+            fill="white"
+          />
+        </svg>
+      </a>
+    </div>
+    <main
+      style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 90vh;
+      "
+    >
+      <div
+        class="form-group"
+        id="container"
+        style="
+          border: 2px solid #3f3f3f;
+          border-radius: 10px;
+          width: 90%;
+          max-width: 950px;
+          padding: 20px;
+          margin: auto;
+          display: flex;
+          justify-content: center;
+        "
+      >
+        <div style="display: flex; flex-direction: column; gap: 10px; flex: 1">
+          <label for="ta">News Headline</label>
+          <textarea
+            placeholder="Enter text"
+            class="form-control text-white bg-dark"
+            style="min-height: 260px; border: 1px #4a4a4a solid"
+            id="ta"
+          ></textarea>
+          <button id="submit-button" class="btn btn-success">Categorize</button>
+        </div>
+        <div style="display: flex; justify-content: start" id="chart-container">
+          <canvas
+            id="probability-chart"
+            style="width: 100%; max-width: 700px; height: 340px"
+          ></canvas>
+        </div>
+      </div>
+    </main>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+      integrity="sha512-ElRFoEQdI5Ht6kZvyzXhYG9NqjtkmlkfYk0wr6wHxU9JEHakS7UJZNeml5ALk+8IKlU6jDgMabC3vkumRokgJA=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+    <script>
+      Chart.defaults.global.defaultFontColor = "#efefef";
+      const labels = [
+        "Clean",
+        "Toxic",
+        "Severe Toxic",
+        "Obscene",
+        "Threat",
+        "Insult",
+        "Identity Hate",
+      ];
+
+      const createChart = (
+        probabilities = new Array(labels.length).fill(0)
+      ) => {
+        const barColors = [
+          "rgba(75, 192, 192, 0.6)",
+          "rgba(255, 205, 86, 0.6)",
+          "rgba(255, 159, 64, 0.6)",
+          "rgba(255, 99, 132, 0.6)",
+          "rgba(153, 102, 255, 0.6)",
+          "rgba(54, 162, 235, 0.6)",
+          "rgba(201, 203, 207, 0.6)",
+        ];
+
+        return new Chart("probability-chart", {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                backgroundColor: barColors,
+                data: probabilities,
+              },
+            ],
+          },
+          options: {
+            title: {
+              display: true,
+              text: "Probability Distribution",
+            },
+            legend: {
+              display: false,
+            },
+            scales: {
+              yAxes: [
+                {
+                  display: true,
+                  ticks: {
+                    beginAtZero: true,
+                  },
+                },
+              ],
+            },
+          },
+        });
+      };
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const resElem = document.getElementById("probability-chart");
+        const element = document.getElementById("submit-button");
+
+        let chart = createChart();
+
+        element.addEventListener("click", () => {
+          const loader = document.getElementById("loading");
+          loader.style.display = "flex";
+
+          const textNode = document.getElementById("ta");
+          const text = textNode.value;
+
+          fetch("/", {
+            method: "POST",
+            body: JSON.stringify({
+              text,
+            }),
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then(async (res) => {
+              loader.style.display = "none";
+              const result = await res.json();
+
+              const { distribution } = result;
+              chart.data.datasets[0].data = JSON.parse(distribution);
+              chart.update();
+            })
+            .catch((er) => {
+              console.log(er);
+              loader.style.display = "none";
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
