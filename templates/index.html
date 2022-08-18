@@ -135,27 +135,16 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
     <script>
       Chart.defaults.global.defaultFontColor = "#efefef";
-      const labels = [
-        "Clean",
-        "Toxic",
-        "Severe Toxic",
-        "Obscene",
-        "Threat",
-        "Insult",
-        "Identity Hate",
-      ];
 
       const createChart = (
-        probabilities = new Array(labels.length).fill(0)
+        probabilities = new Array(4).fill(0),
+        labels = new Array(4).fill("?")
       ) => {
         const barColors = [
-          "rgba(75, 192, 192, 0.6)",
-          "rgba(255, 205, 86, 0.6)",
-          "rgba(255, 159, 64, 0.6)",
-          "rgba(255, 99, 132, 0.6)",
           "rgba(153, 102, 255, 0.6)",
-          "rgba(54, 162, 235, 0.6)",
           "rgba(201, 203, 207, 0.6)",
+          "rgba(255, 159, 64, 0.6)",
+          "rgba(255, 205, 86, 0.6)",
         ];
 
         return new Chart("probability-chart", {
@@ -218,7 +207,11 @@
               const result = await res.json();
 
               const { distribution } = result;
-              chart.data.datasets[0].data = JSON.parse(distribution);
+
+              chart.data.datasets[0].data = distribution.map(
+                (each) => each.probability
+              );
+              chart.data.labels = distribution.map((each) => each.label);
               chart.update();
             })
             .catch((er) => {

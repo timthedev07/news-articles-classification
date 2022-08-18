@@ -1,12 +1,21 @@
 import tensorflow as tf
 from flask import Flask, render_template, request
 from nltk.corpus import stopwords
-import os
-stop_words = set(stopwords.words('english'))
+stopWords = set(stopwords.words('english'))
 
 SAVED_MODEL_DIR = "model"
 
 app = Flask(__name__)
+
+LABELS = ["ARTS", "ARTS & CULTURE", "BLACK VOICES", "BUSINESS", "COLLEGE",
+          "COMEDY", "CRIME", "CULTURE & ARTS", "DIVORCE", "EDUCATION",
+          "ENTERTAINMENT", "ENVIRONMENT", "FIFTY", "FOOD & DRINK",
+          "GOOD NEWS", "GREEN", "HEALTHY LIVING", "HOME & LIVING", "IMPACT",
+          "LATINO VOICES", "MEDIA", "MONEY", "PARENTING", "PARENTS",
+          "POLITICS", "QUEER VOICES", "RELIGION", "SCIENCE", "SPORTS",
+          "STYLE", "STYLE & BEAUTY", "TASTE", "TECH", "THE WORLDPOST",
+          "TRAVEL", "WEDDINGS", "WEIRD NEWS", "WELLNESS", "WOMEN",
+          "WORLD NEWS", "WORLDPOST"]
 
 
 @tf.function
@@ -30,15 +39,13 @@ def customStandardization(text: tf.Tensor):
         text = tf.strings.regex_replace(text, contracted, replacement)
 
     # clean special symbols
-    text = tf.strings.regex_replace(text, "<br />", " ")
     text = tf.strings.regex_replace(
         text, r"\d+(?:\.\d*)?(?:[eE][+-]?\d+)?", " ")
     text = tf.strings.regex_replace(text, r'@([A-Za-z0-9_]+)', " ")
-    text = tf.strings.regex_replace(text, r"\([^)]*\)", " ")
     text = tf.strings.regex_replace(text, r"[^A-Za-z0-9]+", " ")
 
     # remove stopwords
-    for i in stop_words:
+    for i in stopWords:
         text = tf.strings.regex_replace(
             text, f"[^A-Za-z0-9_]+{i}[^A-Za-z0-9_]+", " ")
 
@@ -63,12 +70,25 @@ def home():
         model = loadModel()
         [res] = model.predict([data["text"]])
 
+        buffer = list(res)
+        topRange = 4
+        final = []
+
+        for _ in range(topRange):
+            curr = max(buffer)
+            currInd = buffer.index(curr)
+            buffer.remove(curr)
+            final.append({
+                "probability": str(curr),
+                "label": LABELS[currInd],
+            })
+
         return {
-            "distribution": str(list(res)[:4]),
+            "distribution": final,
         }, 200
     else:
         return render_template("index.html")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
